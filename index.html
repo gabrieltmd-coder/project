@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Financeiro - RUMO</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4169E1;
+            --primary-dark: #1a3a8a;
+            --secondary: #8B7EFF;
+            --accent-cyan: #00D9FF;
+            --accent-purple: #A78BFA;
+            --bg-dark: #0F0F2E;
+            --card-bg: rgba(20, 20, 50, 0.8);
+            --card-border: rgba(65, 105, 225, 0.3);
+            --text-primary: #FFFFFF;
+            --text-secondary: #B0B0D0;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Trebuchet MS', sans-serif;
+            background: linear-gradient(135deg, #1a1a4a 0%, #2d1b4e 50%, #1a2a5a 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* EFEITO DE BACKGROUND ANIMADO */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(65, 105, 225, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(139, 126, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* HEADER */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: slideUp 0.8s ease-out 0.1s both;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab-button {
+            padding: 12px 30px;
+            border: 2px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-secondary);
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(65, 105, 225, 0.2);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%);
+            color: var(--text-primary);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 8px 25px rgba(65, 105, 225, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* KPI CARDS */
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: cardBounce 0.6s ease-out;
+        }
+
+        @keyframes cardBounce {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(65, 105, 225, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .kpi-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 20px 50px rgba(65, 105, 225, 0.3);
+            transform: translateY(-8px);
+        }
+
+        .kpi-label {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .kpi-valor {
+            font-size: 2.2em;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-detalhe {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .kpi-card.negativo .kpi-valor {
+            background: linear-gradient(135deg, var(--danger) 0%, #FF6B6B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-card.positivo .kpi-valor {
+            background: linear-gradient(135deg, var(--success) 0%, #00D97F 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* SEÇÃO */
+        .secao {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            animation: cardBounce 0.6s ease-out;
+        }
+
+        .secao h2 {
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-bottom: 2px solid var(--card-border);
+            padding-bottom: 20px;
+        }
+
+        /* GRID DE GRÁFICOS */
+        .grid-graficos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card-grafico {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            animation: cardBounce 0.6s ease-out;
+        }
+
+        .card-grafico:hover {
+            border-color: var(--primary);
+            box-shadow: 0 20px 50px rgba(65, 105, 225, 0.3);
+            transform: translateY(-8px);
+        }
+
+        .card-grafico h3 {
+            color: var(--text-primary);
+            margin-bottom: 25px;
+            font-size: 1.3em;
+            border-bottom: 2px solid var(--card-border);
+            padding-bottom: 15px;
+        }
+
+        .grafico-container {
+            position: relative;
+            height: 350px;
+            margin-bottom: 15px;
+        }
+
+        /* TABELA */
+        .tabela-container {
+            overflow-x: auto;
+            border-radius: 15px;
+            border: 1px solid var(--card-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, rgba(65, 105, 225, 0.2) 0%, rgba(0, 217, 255, 0.1) 100%);
+            border-bottom: 2px solid var(--card-border);
+        }
+
+        th {
+            padding: 18px 15px;
+            text-align: left;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid var(--card-border);
+            color: var(--text-secondary);
+        }
+
+        tbody tr:hover {
+            background: rgba(65, 105, 225, 0.1);
+        }
+
+        tbody tr:nth-child(even) {
+            background: rgba(65, 105, 225, 0.05);
+        }
+
+        .valor-positivo {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .valor-negativo {
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-verde {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .badge-vermelho {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .badge-amarelo {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        /* RESPONSIVO */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .kpi-container {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-graficos {
+                grid-template-columns: 1fr;
+            }
+
+            .tabs {
+                gap: 10px;
+            }
+
+            .tab-button {
+                padding: 10px 20px;
+                font-size: 0.95em;
+            }
+
+            .secao {
+                padding: 20px;
+            }
+
+            th, td {
+                padding: 12px 8px;
+                font-size: 0.85em;
+            }
+        }
+
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+            margin-top: 50px;
+            font-size: 0.9em;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--primary);
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--danger);
+            color: var(--danger);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        /* ANIMAÇÃO DE CARREGAMENTO */
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--card-border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Dashboard Financeiro</h1>
+            <p>Análise de Contrato e Histograma de Execução</p>
+        </div>
+
+        <!-- VISÃO PRINCIPAL -->
+        <div id="visao-macro" class="tab-content active">
+            <div id="kpis-container" class="kpi-container"></div>
+
+            <div class="grid-graficos">
+                <div class="card-grafico">
+                    <h3>Evolução de Saldo</h3>
+                    <div class="grafico-container">
+                        <canvas id="chartSaldo"></canvas>
+                    </div>
+                </div>
+
+                <div class="card-grafico">
+                    <h3>Execução por Período</h3>
+                    <div class="grafico-container">
+                        <canvas id="chartExecucao"></canvas>
+                    </div>
+                </div>
+
+                <div class="card-grafico">
+                    <h3>Aderência por Período</h3>
+                    <div class="grafico-container">
+                        <canvas id="chartAderencia"></canvas>
+                    </div>
+                </div>
+
+                <div class="card-grafico">
+                    <h3>Planejado vs Realizado (Qty)</h3>
+                    <div class="grafico-container">
+                        <canvas id="chartComparacao"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="secao">
+                <h2>Histórico de Execução</h2>
+                <div class="tabela-container">
+                    <table id="tabela-historico">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Realizado (R$)</th>
+                                <th>Planejado (Qty)</th>
+                                <th>Real (Qty)</th>
+                                <th>Saldo (R$)</th>
+                                <th>Aderência (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-historico"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Dashboard Financeiro - Dados atualizados | Desenvolvido com tecnologia moderna</p>
+    </div>
+
+    <script>
+        let dados = null;
+        let chartInstances = {};
+
+        // Dados embutidos
+        const dadosEmbarcados = {
+            "contrato_total": 4134167.82,
+            "dados_historicos": [
+                { data: "20/09/2025", realizado: 78284.52, planejado: 19, real: 5, saldo: 4055883.30, aderencia: 26 },
+                { data: "20/10/2025", realizado: 208660.09, planejado: 24, real: 12, saldo: 3847223.21, aderencia: 50 },
+                { data: "20/11/2025", realizado: 285170.34, planejado: 32, real: 15, saldo: 3562052.87, aderencia: 47 },
+                { data: "20/12/2025", realizado: 376265.65, planejado: 33, real: 18, saldo: 3186787.22, aderencia: 55 },
+                { data: "20/01/2026", realizado: 360766.66, planejado: 41, real: 19, saldo: 2825020.56, aderencia: 46 },
+                { data: "20/02/2026", realizado: 434487.37, planejado: 44, real: 19, saldo: 2390533.19, aderencia: 43 },
+                { data: "20/03/2026", realizado: 447848.42, planejado: 44, real: 21, saldo: 1942684.77, aderencia: 48 },
+                { data: "20/04/2026", realizado: 435436.26, planejado: 44, real: 20, saldo: 1507248.51, aderencia: 45 },
+                { data: "20/05/2026", realizado: 454531.37, planejado: 44, real: 20, saldo: 1052717.14, aderencia: 45 }
+            ]
+        };
+
+        // Carregar dados
+        function carregarDados() {
+            try {
+                dados = sanitizarDados(dadosEmbarcados);
+                console.log('Dados carregados com sucesso!', dados);
+                renderizarDashboard();
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                document.querySelector('.container').innerHTML += `
+                    <div class="error">
+                        <strong>Erro ao carregar dados!</strong><br>
+                        ${error.message}<br>
+                        Verifique o console do navegador para mais detalhes.
+                    </div>
+                `;
+            }
+        }
+
+        // Chamar ao carregar a página
+        document.addEventListener('DOMContentLoaded', carregarDados);
+
+        function formatarMoeda(valor) {
+            const num = parseFloat(valor) || 0;
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(num);
+        }
+
+        function formatarPercentual(valor) {
+            const num = parseFloat(valor) || 0;
+            return num.toFixed(2) + '%';
+        }
+
+        function sanitizarDados(dados) {
+            return {
+                contrato_total: parseFloat(dados.contrato_total) || 0,
+                dados_historicos: dados.dados_historicos.map(item => ({
+                    data: item.data,
+                    realizado: parseFloat(item.realizado) || 0,
+                    planejado: parseInt(item.planejado) || 0,
+                    real: parseInt(item.real) || 0,
+                    saldo: parseFloat(item.saldo) || 0,
+                    aderencia: parseFloat(item.aderencia) || 0
+                }))
+            };
+        }
+
+        function renderizarDashboard() {
+            renderizarKPIs();
+            renderizarGraficos();
+            renderizarTabelaHistorico();
+        }
+
+        function renderizarKPIs() {
+            const historico = dados.dados_historicos;
+            const totalRealizado = historico.reduce((sum, item) => sum + parseFloat(item.realizado), 0);
+            const saldoAtual = parseFloat(historico[historico.length - 1].saldo);
+            const aderenciaMedia = (historico.reduce((sum, item) => sum + parseFloat(item.aderencia), 0) / historico.length).toFixed(2);
+            const taxaExecucao = ((totalRealizado / parseFloat(dados.contrato_total)) * 100).toFixed(2);
+
+            const html = `
+                <div class="kpi-card">
+                    <div class="kpi-label">Valor do Contrato</div>
+                    <div class="kpi-valor">${formatarMoeda(dados.contrato_total)}</div>
+                    <div class="kpi-detalhe">Valor total do contrato</div>
+                </div>
+                <div class="kpi-card positivo">
+                    <div class="kpi-label">Total Realizado</div>
+                    <div class="kpi-valor">${formatarMoeda(totalRealizado)}</div>
+                    <div class="kpi-detalhe">Valor executado até agora</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Saldo Restante</div>
+                    <div class="kpi-valor">${formatarMoeda(saldoAtual)}</div>
+                    <div class="kpi-detalhe">Ainda a executar</div>
+                </div>
+                <div class="kpi-card positivo">
+                    <div class="kpi-label">Taxa de Execução</div>
+                    <div class="kpi-valor">${formatarPercentual(taxaExecucao)}</div>
+                    <div class="kpi-detalhe">% do contrato realizado</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Aderência Média</div>
+                    <div class="kpi-valor">${formatarPercentual(aderenciaMedia)}</div>
+                    <div class="kpi-detalhe">Média de aderência dos períodos</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Total de Períodos</div>
+                    <div class="kpi-valor">${historico.length}</div>
+                    <div class="kpi-detalhe">Períodos de medição</div>
+                </div>
+            `;
+            document.getElementById('kpis-container').innerHTML = html;
+        }
+
+        function renderizarGraficos() {
+            const historico = dados.dados_historicos;
+            const datas = historico.map(h => h.data);
+            const saldos = historico.map(h => parseFloat(h.saldo));
+            const realizados = historico.map(h => parseFloat(h.realizado));
+            const planejados = historico.map(h => parseInt(h.planejado));
+            const reais = historico.map(h => parseInt(h.real));
+            const aderencias = historico.map(h => parseFloat(h.aderencia));
+
+            // Destruir gráficos anteriores
+            Object.values(chartInstances).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            chartInstances = {};
+
+            // Gráfico 1: Evolução de Saldo
+            const ctx1 = document.getElementById('chartSaldo').getContext('2d');
+            chartInstances.chartSaldo = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: datas,
+                    datasets: [{
+                        label: 'Saldo (R$)',
+                        data: saldos,
+                        borderColor: '#4169E1',
+                        backgroundColor: 'rgba(65, 105, 225, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#00D9FF',
+                        pointBorderColor: '#FFFFFF',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#B0B0D0', font: { size: 12 } }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#B0B0D0' },
+                            grid: { color: 'rgba(65, 105, 225, 0.1)' }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#B0B0D0',
+                                callback: (value) => 'R$ ' + (value / 1000000).toFixed(1) + 'M'
+                            },
+                            grid: { color: 'rgba(65, 105, 225, 0.1)' }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico 2: Execução por Período
+            const ctx2 = document.getElementById('chartExecucao').getContext('2d');
+            chartInstances.chartExecucao = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: datas,
+                    datasets: [{
+                        label: 'Realizado (R$)',
+                        data: realizados,
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: '#10B981',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#B0B0D0' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#B0B0D0' },
+                            grid: { color: 'rgba(65, 105, 225, 0.1)' }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#B0B0D0',
+                                callback: (value) => 'R$ ' + (value / 1000).toFixed(0) + 'K'
+                            },
+                            grid: { color: 'rgba(65, 105, 225, 0.1)' }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico 3: Aderência por Período
+            const ctx3 = document.getElementById('chartAderencia').getContext('2d');
+            const coresAderencia = aderencias.map(a => {
+                if (a >= 50) return 'rgba(16, 185, 129, 0.8)';
+                if (a >= 40) return 'rgba(245, 158, 11, 0.8)';
+                return 'rgba(239, 68, 68, 0.8)';
+            });
+
+            chartInstances.chartAderencia = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: datas,
+                    datasets: [{
+                        label: 'Aderência (%)',
+                        data: aderencias,
+                        backgroundColor: coresAderencia,
+                        borderColor: '#FFFFFF',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: { color: '#B0B0D0' },
+                            grid: { color: 'rgba(65, 105, 225, 0.1)' }
+                        },
+                        y: {
+                            max: 100,
+                            ticks: {
+                                color: '#B0B0D0',
+                                callback: (value) => value + '%'
+                            },
+                            grid: { color: 'rgba(65, 105, 225, 0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#B0B0D0' }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico 4: Planejado vs Realizado (Qty)
+            const ctx4 = document.getElementById('chartComparacao').getContext('2d');
+            chartInstances.chartComparacao = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: datas,
+                    datasets: [
+                        {
+                            label: 'Planejado (Qty)',
+                            data: planejados,
+                            backgroundColor: 'rgba(65, 105, 225, 0.6)',
+                            borderColor: '#4169E1',
+                            borderWidth: 1,
+                            borderRadius: 5
+                        },
+                        {
+                            label: 'Real (Qty)',
+                            data: reais,
+                            backgroundColor: 'rgba(0, 217, 255, 0.6)',
+                            borderColor: '#00D9FF',
+                            borderWidth: 1,
+                            borderRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            ticks: { color: '#B0B0D0' },
+                            grid: { color: 'rgba(65, 105, 225, 0.1)' }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#B0B0D0'
+                            },
+                            grid: { color: 'rgba(65, 105, 225, 0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#B0B0D0' } }
+                    }
+                }
+            });
+        }
+
+        function renderizarTabelaHistorico() {
+            const historico = dados.dados_historicos;
+            let html = '';
+
+            historico.forEach(item => {
+                const aderencia = parseFloat(item.aderencia);
+                const aderenciaClass = aderencia >= 50 ? 'valor-positivo' : (aderencia >= 40 ? '' : 'valor-negativo');
+                html += `
+                    <tr>
+                        <td><strong>${item.data}</strong></td>
+                        <td>${formatarMoeda(parseFloat(item.realizado))}</td>
+                        <td>${parseInt(item.planejado)}</td>
+                        <td>${parseInt(item.real)}</td>
+                        <td>${formatarMoeda(parseFloat(item.saldo))}</td>
+                        <td class="${aderenciaClass}">${formatarPercentual(aderencia)}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('tbody-historico').innerHTML = html;
+        }
+
+        function mudarAba(evt, abaId) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(abaId).classList.add('active');
+            evt.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
